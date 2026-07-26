@@ -45,75 +45,75 @@ Feature-Sliced Design'ın kuralsız bir kod yapısından en önemli farkı, sayf
 
 Bu durumda, bir sayfa bir dilimdir, dolayısıyla bu sayfanın içindeki modüller (dosyalar) aynı katmandan, yani Pages'den değil, yalnızca alt katmanlardaki kodlara referans verebilir.
 
-### Close look at the feed
+### Akışa (feed) yakından bakış
 
 <figure>
-  ![Anonymous user’s perspective](../../../../../../static/img/tutorial/realworld-feed-anonymous.jpg)
+  ![Anonim kullanıcı görünümü](../../../../../../static/img/tutorial/realworld-feed-anonymous.jpg)
   <figcaption>
-    _Anonymous user’s perspective_
+    _Anonim kullanıcı görünümü_
   </figcaption>
 </figure>
 
 <figure>
-  ![Authenticated user’s perspective](../../../../../../static/img/tutorial/realworld-feed-authenticated.jpg)
+  ![Giriş yapmış kullanıcı görünümü](../../../../../../static/img/tutorial/realworld-feed-authenticated.jpg)
   <figcaption>
-    _Authenticated user’s perspective_
+    _Giriş yapmış kullanıcı görünümü_
   </figcaption>
 </figure>
 
-There are three dynamic areas on the feed page:
+Akış sayfasında üç dinamik alan bulunmaktadır:
 
-1. Sign-in links with an indication if you are signed in
-2. List of tags that triggers filtering in the feed
-3. One/two feeds of articles, each article with a like button
+1. Giriş yapıp yapmadığınızı belirten giriş (sign-in) bağlantıları
+2. Akışta filtrelemeyi tetikleyen etiket (tag) listesi
+3. Bir veya iki makale akışı, her makalede bir beğen (like) butonu
 
-The sign-in links are a part of a header that is common to all pages, we will revisit it separately.
+Giriş bağlantıları, tüm sayfalarda ortak olan bir başlığın (header) parçasıdır, buna daha sonra ayrıca döneceğiz.
 
-#### List of tags
+#### Etiket listesi
 
-To build the list of tags, we need to fetch the available tags, render each tag as a chip, and store the selected tags in a client-side storage. These operations fall into categories “API interaction”, “user interface”, and “storage”, respectively. In Feature-Sliced Design, code is separated by purpose using *segments*. Segments are folders in slices, and they can have arbitrary names that describe the purpose, but some purposes are so common that there’s a convention for certain segment names:
+Etiket listesini oluşturmak için kullanılabilir etiketleri getirmeli, her etiketi bir etiket (chip) olarak görselleştirmeli ve seçili etiketleri istemci tarafı bellekte (client-side storage) tutmalıyız. Bu işlemler sırasıyla “API etkileşimi”, “kullanıcı arayüzü” ve “depolama” kategorilerine girer. Feature-Sliced Design'da kod, *segmentler* kullanılarak amaca göre ayrıştırılır. Segmentler, dilimler içindeki klasörlerdir ve amaca göre tanımlanabilecek rastgele isimlere sahip olabilir, ancak bazı amaçlar o kadar yaygındır ki belirli segment isimleri için kurallar vardır:
 
-- 📂 `api/` for backend interactions
-- 📂 `ui/` for code that handles rendering and appearance
-- 📂 `model/` for storage and business logic
-- 📂 `config/` for feature flags, environment variables and other forms of configuration
+- 📂 `api/` — arka uç etkileşimleri için
+- 📂 `ui/` — görselleştirme (rendering) ve görünüme dair kodlar için
+- 📂 `model/` — veri depolama (storage) ve iş mantığı için
+- 📂 `config/` — özellik bayrakları (feature flags), ortam değişkenleri ve diğer yapılandırma türleri için
 
-We will place code that fetches tags into `api`, the tag component into `ui`, and the storage interaction into `model`.
+Etiketleri getiren kodu `api` segmentine, etiket bileşenini `ui` segmentine ve depolama etkileşimini `model` segmentine yerleştireceğiz.
 
-#### Articles
+#### Makaleler
 
-Using the same grouping principles, we can decompose the feed of articles into the same three segments:
+Aynı gruplandırma prensiplerini kullanarak, makale akışını da benzer şekilde üç segmente ayrıştırabiliriz:
 
-- 📂 `api/`: fetch paginated articles with like count; like an article
+- 📂 `api/`: sayfalandırılmış (paginated) makaleleri beğeni sayısıyla birlikte getirme; bir makaleyi beğenme
 - 📂 `ui/`:
-    - tab list that can render an extra tab if a tag is selected
-    - individual article
-    - functional pagination
-- 📂 `model/`: client-side storage of the currently loaded articles and current page (if needed)
+    - bir etiket seçildiğinde ekstra bir sekme gösterebilen sekme listesi
+    - tekil makale
+    - fonksiyonuna göre sayfalandırma
+- 📂 `model/`: halihazırda yüklenmiş makalelerin ve mevcut sayfanın (gerekirse) istemci tarafında depolanması (client-side storage)
 
-### Reuse generic code
+### Ortak kodları tekrar kullanmak
 
-Most pages are very different in intent, but certain things stay the same across the entire app — for example, the UI kit that conforms to the design language, or the convention on the backend that everything is done with a REST API with the same authentication method. Since slices are meant to be isolated, code reuse is facilitated by a lower layer, **Shared**.
+Çoğu sayfa amaç olarak birbirinden oldukça farklıdır, ancak uygulamanın genelinde aynı kalan bazı şeyler vardır — örneğin, tasarım diline uygun bir UI kiti veya arka uçta her şeyin aynı kimlik doğrulama yöntemine sahip bir REST API ile yapıldığı kuralı. Dilimler (slices) izole edilmek üzere tasarlandığından, kod tekrar kullanımı daha alt bir katman olan **Shared** katmanı aracılığıyla sağlanır.
 
-Shared is different from other layers in the sense that it contains segments, not slices. In this way, the Shared layer can be thought of as a hybrid between a layer and a slice.
+Shared, diğer katmanlardan farklı olarak dilimler değil, segmentler içerir. Bu açıdan, Shared katmanı katman ile dilim arasında hibrit bir yapı olarak düşünülebilir.
 
-Usually, the code in Shared is not planned ahead of time, but rather extracted during development, because only during development does it become clear which parts of code are actually shared. However, it’s still helpful to keep a mental note of what kind of code naturally belongs in Shared:
+Genellikle Shared içindeki kod, önceden planlanmaz; geliştirme sırasında çıkarılır çünkü ancak o zaman hangi kodların gerçekten paylaşıldığı netleşir. Ancak yine de aklınızda tutmakta fayda var: 
 
-- 📂 `ui/` — the UI kit, pure appearance, no business logic. For example, buttons, modal dialogs, form inputs.
-- 📂 `api/` — convenience wrappers around request making primitives (like `fetch()` on the Web) and, optionally, functions for triggering particular requests according to the backend specification.
-- 📂 `config/` — parsing environment variables
-- 📂 `i18n/` — configuration of language support
-- 📂 `router/` — routing primitives and route constants
+- 📂 `ui/` — UI kiti, salt görünüm, iş mantığı (business logic) içermez. Örneğin; butonlar, modal iletişim kutuları, form girdileri.
+- 📂 `api/` — istek yapma ilkelleri (Web'deki `fetch()` gibi) etrafında kolaylaştırıcı sarmalayıcılar (wrappers) ve isteğe bağlı olarak, arka uç belirtimlerine göre belirli istekleri tetikleyen fonksiyonlar.
+- 📂 `config/` — ortam değişkenlerini çözümleme
+- 📂 `i18n/` — dil desteğinin yapılandırılması
+- 📂 `router/` — yönlendirme ilkelleri (routing primitives) ve rota sabitleri (route constants)
 
-Those are just a few examples of segment names in Shared, but you can omit any of them or create your own. The only important thing to remember when creating new segments is that segment names should describe **purpose (the why), not essence (the what)**. Names like “components”, “hooks”, “modals” *should not* be used because they describe what these files are, but don’t help to navigate the code inside. This requires people on the team to dig through every file in such folders and also keeps unrelated code close, which leads to broad areas of code being affected by refactoring and thus makes code review and testing harder.
+Bunlar Shared içindeki segment adlarına sadece birkaç örnektir, herhangi birini çıkarabilir veya kendinizinkini oluşturabilirsiniz. Yeni segmentler oluştururken hatırlamanız gereken tek önemli nokta, segment adlarının **özü (ne olduğunu) değil, amacı (neden olduğunu)** açıklaması gerektiğidir. “components”, “hooks”, “modals” gibi isimler *kullanılmamalıdır* çünkü bu dosyaların ne olduğunu açıklarlar, ancak içerideki koda göz atmaya (navigate) yardımcı olmazlar. Bu tür isimlendirmeler, ekipteki kişilerin bu tür klasörlerdeki her dosyayı tek tek incelemesini gerektirir ve ayrıca alakasız kodları bir arada tutar; bu da yeniden düzenlemenin (refactoring) çok geniş kod alanlarını etkilemesine yol açarak kod incelemesini ve test sürecini zorlaştırır.
 
-### Define a strict public API
+### Kesin bir public API tanımlayın
 
-In the context of Feature-Sliced Design, the term *public API* refers to a slice or segment declaring what can be imported from it by other modules in the project. For example, in JavaScript that can be an `index.js` file re-exporting objects from other files in the slice. This enables freedom in refactoring code inside a slice as long as the contract with the outside world (i.e. the public API) stays the same.
+Feature-Sliced Design bağlamında *public API* terimi, projedeki diğer modüller tarafından kendisinden nelerin içe aktarılabileceğini beyan eden bir dilim (slice) veya segmenti ifade eder. Örneğin, JavaScript'te bu, dilim içindeki diğer dosyalardan gelen nesneleri yeniden dışa aktaran (re-export) bir `index.js` dosyası olabilir. Dış dünyayla olan sözleşme (yani public API) aynı kaldığı sürece bu, bir dilimin içindeki kodu yeniden düzenleme konusunda özgürlük sağlar.
 
-For the Shared layer that has no slices, it’s usually more convenient to define a separate public API for each segment as opposed to defining one single index of everything in Shared. This keeps imports from Shared naturally organized by intent. For other layers that have slices, the opposite is true — it’s usually more practical to define one index per slice and let the slice decide its own set of segments that is unknown to the outside world because other layers usually have a lot less exports.
+Dilim barındırmayan Shared katmanı için, Shared içindeki her şey için tek bir indeks tanımlamak yerine her bir segment için ayrı bir public API tanımlamak genellikle daha uygundur. Bu yaklaşım, Shared'dan yapılan içe aktarmaların amaca göre doğal bir şekilde organize olmasını sağlar. Dilimleri olan diğer katmanlar içinse bunun tam tersi geçerlidir — genellikle her dilim için tek bir indeks tanımlamak ve dış dünya tarafından bilinmeyen kendi segment kümesini belirlemeyi dilimin kendisine bırakmak daha pratiktir, çünkü diğer katmanların genellikle çok daha az dışa aktarımı vardır.
 
-Our slices/segments will appear to each other as follows:
+Dilimlerimiz/segmentlerimiz birbirlerine şu şekilde görünecektir:
 
 <FileTree>
 - pages/
@@ -132,66 +132,66 @@ Our slices/segments will appear to each other as follows:
   - ...
 </FileTree>
 
-Whatever is inside folders like `pages/feed` or `shared/ui` is only known to those folders, and other files should not rely on the internal structure of these folders.
+`pages/feed` veya `shared/ui` gibi klasörlerin içinde ne olduğu yalnızca bu klasörler tarafından bilinir ve diğer dosyalar bu klasörlerin iç yapısına bağımlı olmamalıdır.
 
-### Large reused blocks in the UI
+### UI'daki yeniden kullanılan büyük bloklar
 
-Earlier we made a note to revisit the header that appears on every page. Rebuilding it from scratch on every page would be impractical, so it’s only natural to want to reuse it. We already have Shared to facilitate code reuse, however, there’s a caveat to putting large blocks of UI in Shared — the Shared layer is not supposed to know about any of the layers above.
+Daha önce, her sayfada yer alan başlığa (header) ileride tekrar değineceğimizi not etmiştik. Onu her sayfada sıfırdan oluşturmak pratik olmazdı, bu nedenle yeniden kullanmak istememiz son derece doğaldır. Kodun yeniden kullanımını kolaylaştırmak için halihazırda Shared katmanımız var, ancak büyük UI bloklarını Shared içine koyarken dikkat edilmesi gereken bir nokta vardır — Shared katmanının, kendi üstündeki katmanların hiçbirini bilmemesi gerekir.
 
-Between Shared and Pages there are three other layers: Entities, Features, and Widgets.  Some projects may have something in those layers that they need in a large reusable block, and that means we can’t put that reusable block in Shared, or else it would be importing from upper layers, which is prohibited. That’s where the Widgets layer comes in. It is located above Shared, Entities, and Features, so it can use them all.
+Shared ile Pages arasında üç katman daha bulunur: Entities, Features ve Widgets. Bazı projelerin bu katmanlardaki bazı yapılara büyük ve yeniden kullanılabilir bir blok içinde ihtiyacı olabilir; bu da söz konusu yeniden kullanılabilir bloğu Shared içine koyamayacağımız anlamına gelir, aksi takdirde yasaklı bir eylem olan 'üst katmanlardan içe aktarma yapma (importing from upper layers)' kuralını çiğnemiş oluruz. İşte Widgets katmanı burada devreye girer. Shared, Entities ve Features katmanlarının yukarısında yer aldığı için hepsini kullanabilir.
 
-In our case, the header is very simple — it’s a static logo and top-level navigation. The navigation needs to make a request to the API to determine if the user is currently logged in or not, but that can be handled by a simple import from the `api` segment. Therefore, we will keep our header in Shared.
+Bizim durumumuzda, başlık oldukça basittir — statik bir logo ve üst düzey bir gezinme (navigation) menüsünden oluşur. Gezinme menüsünün, kullanıcının o an giriş yapıp yapmadığını belirlemek için API'ye bir istekte bulunması gerekir; fakat bu işlem, `api` segmentinden basit bir içe aktarmayla halledilebilir. Bu nedenle, başlığımızı Shared katmanında tutacağız.
 
-### Close look at a page with a form
+### Form içeren bir sayfaya yakından bakış
 
-Let’s also examine a page that’s intended for editing, not reading. For example, the article writer:
+Okuma değil, düzenleme amacıyla tasarlanmış bir sayfayı da inceleyelim. Örneğin, makale yazma sayfası (article writer):
 
-![Conduit post editor](../../../../../../static/img/tutorial/realworld-editor-authenticated.jpg)
+![Conduit gönderi editörü](../../../../../../static/img/tutorial/realworld-editor-authenticated.jpg)
 
-It looks trivial, but contains several aspects of application development that we haven’t explored yet — form validation, error states, and data persistence.
+Görünüşte basit gibi dursa da uygulama geliştirmenin henüz değinmediğimiz birkaç yönünü barındırır — form doğrulama (validation), hata durumları (error states) ve veri kalıcılığı (data persistence).
 
-If we were to build this page, we would grab some inputs and buttons from Shared and put together a form in the `ui` segment of this page. Then, in the `api` segment, we would define a mutation request to create the article on the backend.
+Bu sayfayı bizim yapmamız gerekseydi, Shared içerisinden bazı girdileri (inputs) ve butonları alır, bu sayfanın `ui` segmentinde bir form olarak bir araya getirirdik. Ardından, `api` segmentinde makaleyi arka uçta oluşturmak için bir mutasyon (mutation) isteği tanımlardık.
 
-To validate the request before sending, we need a validation schema, and a good place for it is the `model` segment, since it’s the data model. There we will produce error messages and display them using another component in the `ui` segment.
+İsteği göndermeden önce doğrulamak için bir doğrulama şemasına (validation schema) ihtiyacımız vardır ve veri modeli olduğu için bunun en uygun yeri `model` segmentidir. Orada hata mesajlarını üretecek ve bunları `ui` segmentindeki başka bir bileşen kullanarak görüntüleyeceğiz.
 
-To improve user experience, we could also persist the inputs to prevent accidental data loss. This is also a job of the `model` segment.
+Kullanıcı deneyimini iyileştirmek adına, yanlışlıkla yaşanabilecek veri kayıplarını önlemek için girdileri (inputs) kalıcı hale de getirebiliriz (persist). Bu da yine `model` segmentinin bir görevidir.
 
-### Summary
+### Özet
 
-We have examined several pages and outlined a preliminary structure for our application:
+Birkaç sayfayı inceledik ve uygulamamız için bir ön yapı taslağı çıkardık:
 
-1. Shared layer
-    1. `ui`  will contain our reusable UI kit
-    2. `api`  will contain our primitive interactions with the backend
-    3. The rest will be arranged on demand
-2. Pages layer — each page is a separate slice
-    1. `ui`  will contain the page itself and all of its parts
-    2. `api`  will contain more specialized data fetching, using `shared/api`
-    3. `model`  might contain client-side storage of the data that we will display
+1. Shared katmanı
+    1. `ui` yeniden kullanılabilir UI kitimizi içerecek
+    2. `api` arka uç ile olan temel (primitive) etkileşimlerimizi içerecek
+    3. Geri kalanı ihtiyaca göre düzenlenecek
+2. Pages katmanı — her sayfa ayrı bir dilimdir (slice)
+    1. `ui` sayfanın kendisini ve tüm parçalarını içerecek
+    2. `api` `shared/api` kullanarak daha özelleştirilmiş veri getirme işlemlerini içerecek
+    3. `model` görüntüleyeceğimiz verilerin istemci tarafı belleğini (client-side storage) barındırabilir
 
-Let’s get building!
+Hadi geliştirmeye başlayalım!
 
-## Part 2. In code
+## Bölüm 2. Kod üzerinde
 
-Now that we have a plan, let’s put it to practice. We will use React and [Remix](https://remix.run).
+Artık bir planımız olduğuna göre, bunu pratiğe dökelim. React ve [Remix](https://remix.run) kullanacağız.
 
-There's a template ready for this project, clone it from GitHub to get a headstart: [https://github.com/feature-sliced/tutorial-conduit/tree/clean](https://github.com/feature-sliced/tutorial-conduit/tree/clean).
+Bu proje için hazır bir şablon mevcut, hızlı bir başlangıç yapmak için GitHub'dan klonlayın: [https://github.com/feature-sliced/tutorial-conduit/tree/clean](https://github.com/feature-sliced/tutorial-conduit/tree/clean).
 
-Install dependencies with `npm install` and start the development server with `npm run dev`. Open `http://localhost:3000` and you should see a blank app.
+Bağımlılıkları (dependencies) `npm install` ile kurun ve geliştirme sunucusunu (development server) `npm run dev` ile başlatın. `http://localhost:3000` adresini açtığınızda boş bir uygulama görmelisiniz.
 
-### Lay out the pages
+### Sayfaların yapısını oluşturma
 
-Let’s start by creating blank components for all our pages. Run the following command in your project:
+Tüm sayfalarımız için boş bileşenler (components) oluşturarak başlayalım. Projenizde aşağıdaki komutu çalıştırın:
 
 ```bash
 npx fsd pages feed sign-in article-read article-edit profile settings --segments ui
 ```
 
-This will create folders like `pages/feed/ui/` and an index file, `pages/feed/index.ts`, for every page.
+Bu komut, her sayfa için `pages/feed/ui/` benzeri klasörler ve `pages/feed/index.ts` gibi bir indeks dosyası oluşturacaktır.
 
-### Connect the feed page
+### Akış (feed) sayfasını bağlama
 
-Let’s connect the root route of our application to the feed page. Create a component, `FeedPage.tsx` in `pages/feed/ui` and put the following inside it:
+Uygulamamızın kök rotasını (root route) akış sayfasına bağlayalım. `pages/feed/ui` dizininde `FeedPage.tsx` adında bir bileşen oluşturun ve içine aşağıdakileri koyun:
 
 
 ```tsx title="pages/feed/ui/FeedPage.tsx"
@@ -209,7 +209,7 @@ export function FeedPage() {
 }
 ```
 
-Then re-export this component in the feed page’s public API, the `pages/feed/index.ts` file:
+Sonra bu bileşeni akış sayfasının public API'sinde, yani `pages/feed/index.ts` dosyasında yeniden dışa aktarın (re-export):
 
 
 
@@ -217,9 +217,9 @@ Then re-export this component in the feed page’s public API, the `pages/feed/i
 export { FeedPage } from "./ui/FeedPage";
 ```
 
-Now connect it to the root route. In Remix, routing is file-based, and the route files are located in the `app/routes` folder, which nicely coincides with Feature-Sliced Design.
+Şimdi bunu kök rotaya (root route) bağlayın. Remix'te yönlendirme (routing) dosya tabanlıdır ve rota dosyaları `app/routes` klasöründe bulunur; bu da Feature-Sliced Design ile oldukça güzel bir şekilde örtüşür.
 
-Use the `FeedPage` component in `app/routes/_index.tsx`:
+`app/routes/_index.tsx` dosyasında `FeedPage` bileşenini kullanın:
 
 ```tsx title="app/routes/_index.tsx"
 import type { MetaFunction } from "@remix-run/node";
@@ -232,19 +232,19 @@ export const meta: MetaFunction = () => {
 export default FeedPage;
 ```
 
-Then, if you run the dev server and open the application, you should see the Conduit banner!
+Ardından, geliştirme sunucusunu (dev server) çalıştırır ve uygulamayı açarsanız Conduit afişini (banner) görmelisiniz!
 
-![The banner of Conduit](../../../../../../static/img/tutorial/conduit-banner.jpg)
+![Conduit afişi](../../../../../../static/img/tutorial/conduit-banner.jpg)
 
-### API client
+### API istemcisi (API client)
 
-To talk to the RealWorld backend, let’s create a convenient API client in Shared. Create two segments, `api` for the client and `config` for variables like the backend base URL:
+RealWorld arka ucuyla (backend) konuşmak için Shared katmanında kullanışlı bir API istemcisi oluşturalım. İstemci için `api` ve arka uç temel URL'si (base URL) gibi değişkenler için `config` olmak üzere iki segment oluşturun:
 
 ```bash
 npx fsd shared --segments api config
 ```
 
-Then create `shared/config/backend.ts`:
+Ardından `shared/config/backend.ts` dosyasını oluşturun:
 
 ```tsx title="shared/config/backend.ts"
 export { mockBackendUrl as backendBaseUrl } from "mocks/handlers";
@@ -254,15 +254,15 @@ export { mockBackendUrl as backendBaseUrl } from "mocks/handlers";
 export { backendBaseUrl } from "./backend";
 ```
 
-Since the RealWorld project conveniently provides an [OpenAPI specification](https://github.com/gothinkster/realworld/blob/main/api/openapi.yml), we can take advantage of auto-generated types for our client. We will use [the `openapi-fetch` package](https://openapi-ts.pages.dev/openapi-fetch/) that comes with an additional type generator.
+RealWorld projesi kullanışlı bir şekilde bir [OpenAPI spesifikasyonu](https://github.com/gothinkster/realworld/blob/main/api/openapi.yml) sunduğu için, istemcimiz için otomatik oluşturulan (auto-generated) tiplerden faydalanabiliriz. Ek bir tip oluşturucu (type generator) ile birlikte gelen [`openapi-fetch` paketini](https://openapi-ts.pages.dev/openapi-fetch/) kullanacağız.
 
-Run the following command to generate up-to-date API typings:
+Güncel API tiplerini (typings) oluşturmak için aşağıdaki komutu çalıştırın:
 
 ```bash
 npm run generate-api-types
 ```
 
-This will create a file `shared/api/v1.d.ts`. We will use this file to create a typed API client in `shared/api/client.ts`:
+Bu komut, `shared/api/v1.d.ts` dosyasını oluşturacaktır. Bu dosyayı `shared/api/client.ts` içinde tiplendirilmiş (typed) bir API istemcisi oluşturmak için kullanacağız:
 
 ```tsx title="shared/api/client.ts"
 import createClient from "openapi-fetch";
@@ -277,17 +277,17 @@ export const { GET, POST, PUT, DELETE } = createClient<paths>({ baseUrl: backend
 export { GET, POST, PUT, DELETE } from "./client";
 ```
 
-### Real data in the feed
+### Akışta (feed) gerçek veriler
 
-We can now proceed to adding articles to the feed, fetched from the backend. Let’s begin by implementing an article preview component.
+Artık arka uçtan (backend) getirilen makaleleri akışa eklemeye geçebiliriz. Bir makale önizleme (article preview) bileşeni uygulayarak başlayalım.
 
-Create `pages/feed/ui/ArticlePreview.tsx` with the following content:
+Aşağıdaki içerikle `pages/feed/ui/ArticlePreview.tsx` dosyasını oluşturun:
 
 ```tsx title="pages/feed/ui/ArticlePreview.tsx"
 export function ArticlePreview({ article }) { /* TODO */ }
 ```
 
-Since we’re writing in TypeScript, it would be nice to have a typed article object. If we explore the generated `v1.d.ts`, we can see that the article object is available through `components["schemas"]["Article"]`. So let’s create a file with our data models in Shared and export the models:
+TypeScript ile yazdığımız için tiplendirilmiş (typed) bir makale nesnesine sahip olmak güzel olurdu. Oluşturulan `v1.d.ts` dosyasını incelersek, makale nesnesine `components["schemas"]["Article"]` aracılığıyla ulaşılabileceğini görebiliriz. O halde Shared katmanında veri modellerimizle bir dosya oluşturalım ve bu modelleri dışa aktaralım (export):
 
 ```tsx title="shared/api/models.ts"
 import type { components } from "./v1";
@@ -301,7 +301,7 @@ export { GET, POST, PUT, DELETE } from "./client";
 export type { Article } from "./models";
 ```
 
-Now we can come back to the article preview component and fill the markup with data. Update the component with the following content:
+Şimdi makale önizleme bileşenine geri dönebilir ve yapıyı (markup) verilerle doldurabiliriz. Bileşeni aşağıdaki içerikle güncelleyin:
 
 ```tsx title="pages/feed/ui/ArticlePreview.tsx"
 import { Link } from "@remix-run/react";
@@ -357,9 +357,9 @@ export function ArticlePreview({ article }: ArticlePreviewProps) {
 }
 ```
 
-The like button doesn’t do anything for now, we will fix that when we get to the article reader page and implement the liking functionality.
+Beğenme (like) butonu şimdilik hiçbir şey yapmıyor; makale okuma sayfasına (article reader) geçtiğimizde ve beğenme işlevini uyguladığımızda bunu düzelteceğiz.
 
-Now we can fetch the articles and render out a bunch of these cards. Fetching data in Remix is done with *loaders* — server-side functions that fetch exactly what a page needs. Loaders interact with the API on the page’s behalf, so we will put them in the `api` segment of a page:
+Artık makaleleri getirebilir (fetch) ve bu kartlardan birkaçını ekrana çizebiliriz (render). Remix'te veri getirme işlemi *yükleyiciler (loaders)* — bir sayfanın tam olarak neye ihtiyacı varsa onu getiren sunucu tarafı işlevleri — ile yapılır. Yükleyiciler sayfa adına API ile etkileşime girer, bu yüzden onları bir sayfanın `api` segmentine yerleştireceğiz:
 
 ```tsx title="pages/feed/api/loader.ts"
 import { json } from "@remix-run/node";
@@ -377,7 +377,7 @@ export const loader = async () => {
 };
 ```
 
-To connect it to the page, we need to export it with the name `loader` from the route file:
+Bunu sayfaya bağlamak için, rota (route) dosyasından `loader` adıyla dışa aktarmamız (export) gerekir:
 
 ```tsx title="pages/feed/index.ts"
 export { FeedPage } from "./ui/FeedPage";
@@ -397,7 +397,7 @@ export const meta: MetaFunction = () => {
 export default FeedPage;
 ```
 
-And the final step is to render these cards in the feed. Update your `FeedPage` with the following code:
+Ve son adım, bu kartları akış (feed) içinde oluşturmaktır (render). `FeedPage` bileşeninizi aşağıdaki kodla güncelleyin:
 
 ```tsx title="pages/feed/ui/FeedPage.tsx"
 import { useLoaderData } from "@remix-run/react";
@@ -431,11 +431,11 @@ export function FeedPage() {
 }
 ```
 
-### Filtering by tag
+### Etikete göre filtreleme
 
-Regarding the tags, our job is to fetch them from the backend and to store the currently selected tag. We already know how to do fetching — it’s another request from the loader. We will use a convenience function `promiseHash` from a package `remix-utils`, which is already installed.
+Etiketler konusundaki görevimiz, onları arka uçtan (backend) getirmek ve halihazırda seçili olan etiketi saklamaktır. Veri getirme işlemini zaten biliyoruz — loader (yükleyici) aracılığıyla yapılan bir başka istektir. Önceden yüklenmiş olan `remix-utils` paketinden `promiseHash` adlı kullanışlı bir fonksiyonu kullanacağız.
 
-Update the loader file, `pages/feed/api/loader.ts`, with the following code:
+`pages/feed/api/loader.ts` içerisindeki loader dosyasını aşağıdaki kodla güncelleyin:
 
 ```tsx title="pages/feed/api/loader.ts"
 import { json } from "@remix-run/node";
@@ -466,11 +466,11 @@ export const loader = async () => {
 };
 ```
 
-You might notice that we extracted the error handling into a generic function `throwAnyErrors`. It looks pretty useful, so we might want to reuse it later, but for now let’s just keep an eye on it.
+Hata yakalama/işleme (error handling) sürecini `throwAnyErrors` isimli jenerik (generic) bir fonksiyona çıkardığımızı fark edebilirsiniz. Oldukça faydalı görünüyor, bu nedenle ileride yeniden kullanmak isteyebiliriz; ancak şimdilik aklımızın bir köşesinde bulunması yeterli.
 
-Now, to the list of tags. It needs to be interactive — clicking on a tag should make that tag selected. By Remix convention, we will use the URL search parameters as our storage for the selected tag. Let the browser take care of storage while we focus on more important things.
+Şimdi, etiket (tag) listesine gelelim. İnteraktif olması gerekir — bir etikete tıklandığında o etiket seçili hale gelmelidir. Remix geleneklerine (convention) uygun olarak, seçili etiket için depolama (storage) alanı olarak URL arama parametrelerini (search parameters) kullanacağız. Biz daha önemli işlere odaklanırken depolama işini tarayıcının (browser) halletmesine izin verelim.
 
-Update `pages/feed/ui/FeedPage.tsx` with the following code:
+`pages/feed/ui/FeedPage.tsx` dosyasını aşağıdaki kodla güncelleyin:
 
 ```tsx title="pages/feed/ui/FeedPage.tsx"
 import { Form, useLoaderData } from "@remix-run/react";
@@ -527,7 +527,7 @@ export function FeedPage() {
 }
 ```
 
-Then we need to use the `tag` search parameter in our loader. Change the `loader` function in `pages/feed/api/loader.ts` to the following:
+Daha sonra loader'ımızda `tag` arama parametresini kullanmamız gerekir. `pages/feed/api/loader.ts` içerisindeki `loader` fonksiyonunu şu şekilde değiştirin:
 
 ```tsx title="pages/feed/api/loader.ts"
 import { json, type LoaderFunctionArgs } from "@remix-run/node";
@@ -563,11 +563,11 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 };
 ```
 
-That’s it, no `model` segment necessary. Remix is pretty neat.
+İşte bu kadar, hiçbir `model` segmentine ihtiyaç kalmadı. Remix oldukça harika.
 
-### Pagination
+### Sayfalama (Pagination)
 
-In a similar fashion, we can implement the pagination. Feel free to give it a shot yourself or just copy the code below. There’s no one to judge you anyway.
+Benzer şekilde sayfalama (pagination) işlemini uygulayabiliriz. İsterseniz kendiniz deneyebilirsiniz veya sadece aşağıdaki kodu kopyalayabilirsiniz. Zaten kimse sizi yargılamayacak.
 
 ```tsx title="pages/feed/api/loader.ts"
 import { json, type LoaderFunctionArgs } from "@remix-run/node";
@@ -588,7 +588,7 @@ async function throwAnyErrors<T, O, Media extends `${string}/${string}`>(
   return data as NonNullable<typeof data>;
 }
 
-/** Amount of articles on one page. */
+/** Bir sayfadaki makale sayısı. */
 export const LIMIT = 20;
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
@@ -698,13 +698,13 @@ export function FeedPage() {
 }
 ```
 
-So that’s also done. There’s also the tab list that can be similarly implemented, but let’s hold on to that until we implement authentication. Speaking of which!
+Böylece bunu da tamamladık. Benzer şekilde eklenebilecek sekme listesi (tab list) de mevcut ancak kimlik doğrulama (authentication) aşamasına kadar bunu beklemeye alalım. Yeri gelmişken ondan da bahsedelim!
 
-### Authentication
+### Kimlik Doğrulama (Authentication)
 
-Authentication involves two pages — one to login and another to register. They are mostly the same, so it makes sense to keep them in the same slice, `sign-in`, so that they can reuse code if needed.
+Kimlik doğrulama iki sayfayı kapsar — biri giriş (login), diğeri ise kayıt (register) içindir. Bunlar çoğunlukla aynıdır; bu nedenle gerektiğinde kodu yeniden kullanabilmeleri için ikisini aynı dilimde (slice) —yani `sign-in` diliminde— tutmak mantıklıdır.
 
-Create `RegisterPage.tsx` in the `ui` segment of `pages/sign-in` with the following content:
+Aşağıdaki içerikle `pages/sign-in` konumunun `ui` segmentinde `RegisterPage.tsx` dosyasını oluşturun:
 
 ```tsx title="pages/sign-in/ui/RegisterPage.tsx"
 import { Form, Link, useActionData } from "@remix-run/react";
@@ -769,15 +769,15 @@ export function RegisterPage() {
 }
 ```
 
-We have a broken import to fix now. It involves a new segment, so create that:
+Şimdi düzeltmemiz gereken hatalı (kırık) bir import'umuz var. Bu, yeni bir segment oluşturmayı gerektiriyor, o halde oluşturalım:
 
 ```bash
 npx fsd pages sign-in -s api
 ```
 
-However, before we can implement the backend part of registering, we need some infrastructure code for Remix to handle sessions. That goes to Shared, in case any other page needs it.
+Ancak kayıt olma (register) işleminin arka uç (backend) kısmını uygulamadan önce, Remix'in oturumları (sessions) idare etmesi için altyapı kodlarına ihtiyacımız var. Bu kod, başka sayfaların da ihtiyacı olabileceği ihtimaline karşı Shared katmanına gider.
 
-Put the following code in `shared/api/auth.server.ts`. This is highly Remix-specific, so don’t worry too much about it, just copy-paste:
+Aşağıdaki kodu `shared/api/auth.server.ts` içerisine koyun. Bu kod büyük oranda Remix'e özgüdür, bu yüzden çok fazla kafa yormanıza gerek yok, sadece kopyalayıp yapıştırın:
 
 ```tsx title="shared/api/auth.server.ts"
 import { createCookieSessionStorage, redirect } from "@remix-run/node";
@@ -820,7 +820,7 @@ export async function createUserSession({
   return redirect(redirectTo, {
     headers: {
       "Set-Cookie": await sessionStorage.commitSession(session, {
-        maxAge: 60 * 60 * 24 * 7, // 7 days
+        maxAge: 60 * 60 * 24 * 7, // 7 gün
       }),
     },
   });
@@ -844,7 +844,7 @@ export async function requireUser(request: Request) {
 }
 ```
 
-And also export the `User` model from the `models.ts` file right next to it:
+Ayrıca, onun hemen yanındaki `models.ts` dosyasından `User` modelini dışa aktarın (export):
 
 ```tsx title="shared/api/models.ts"
 import type { components } from "./v1";
@@ -853,13 +853,13 @@ export type Article = components["schemas"]["Article"];
 export type User = components["schemas"]["User"];
 ```
 
-Before this code can work, the `SESSION_SECRET` environment variable needs to be set. Create a file called `.env` in the root of the project, write `SESSION_SECRET=` and then mash some keys on your keyboard to create a long random string. You should get something like this:
+Bu kodun çalışabilmesi için öncelikle `SESSION_SECRET` çevre değişkeninin (environment variable) ayarlanması gerekir. Projenin kök dizininde `.env` adında bir dosya oluşturun, `SESSION_SECRET=` yazın ve ardından klavyenizdeki tuşlara rastgele basarak uzun ve rastgele bir dize (string) oluşturun. Buna benzer bir şey elde etmelisiniz:
 
 ```bash title=".env"
 SESSION_SECRET=dontyoudarecopypastethis
 ```
 
-Finally, add some exports to the public API to make use of this code:
+Son olarak, bu kodu kullanabilmek için public API'ye bazı dışa aktarmalar (exports) ekleyin:
 
 ```tsx title="shared/api/index.ts"
 export { GET, POST, PUT, DELETE } from "./client";
@@ -869,7 +869,7 @@ export type { Article } from "./models";
 export { createUserSession, getUserFromSession, requireUser } from "./auth.server";
 ```
 
-Now we can write the code that will talk to the RealWorld backend to actually do the registration. We will keep that in `pages/sign-in/api`. Create a file called `register.ts` and put the following code inside:
+Artık kaydı gerçekleştirmek için RealWorld arka ucu (backend) ile konuşacak olan kodu yazabiliriz. Bunu `pages/sign-in/api` içinde tutacağız. `register.ts` adında bir dosya oluşturun ve içine aşağıdaki kodu koyun:
 
 ```tsx title="pages/sign-in/api/register.ts"
 import { json, type ActionFunctionArgs } from "@remix-run/node";
@@ -903,7 +903,7 @@ export { RegisterPage } from './ui/RegisterPage';
 export { register } from './api/register';
 ```
 
-Almost done! Just need to connect the page and action to the `/register` route. Create `register.tsx` in `app/routes`:
+Neredeyse bitti! Sadece sayfayı ve eylemi (action) `/register` rotasına bağlamamız gerekiyor. `app/routes` içinde `register.tsx` oluşturun:
 
 ```tsx title="app/routes/register.tsx"
 import { RegisterPage, register } from "pages/sign-in";
@@ -913,9 +913,9 @@ export { register as action };
 export default RegisterPage;
 ```
 
-Now if you go to `http://localhost:3000/register`, you should be able to create a user! The rest of the application won’t react to this yet, we’ll address that momentarily.
+Şimdi `http://localhost:3000/register` adresine giderseniz bir kullanıcı oluşturabilmelisiniz! Uygulamanın geri kalanı henüz buna tepki vermeyecek, birazdan bu konuya da değineceğiz.
 
-In a very similar way, we can implement the login page. Give it a try or just grab the code and move on:
+Çok benzer bir şekilde, giriş (login) sayfasını da uygulayabiliriz. İsterseniz kendiniz deneyin ya da aşağıdaki kodu kopyalayıp devam edin:
 
 ```tsx title="pages/sign-in/api/sign-in.ts"
 import { json, type ActionFunctionArgs } from "@remix-run/node";
@@ -1013,17 +1013,17 @@ export { signIn as action };
 export default SignInPage;
 ```
 
-Now let’s give the users a way to actually get to these pages.
+Şimdi kullanıcılara bu sayfalara gerçekten ulaşabilmeleri için bir yol sunalım.
 
-### Header
+### Başlık (Header)
 
-As we discussed in part 1, the app header is commonly placed either in Widgets or in Shared. We will put it in Shared because it’s very simple and all the business logic can be kept outside of it. Let’s create a place for it:
+Bölüm 1'de bahsettiğimiz gibi, uygulama başlığı (header) genellikle ya Widgets ya da Shared katmanına yerleştirilir. Çok basit olduğu ve tüm iş mantığı (business logic) dışında tutulabileceği için onu Shared içine yerleştireceğiz. Onun için bir yer oluşturalım:
 
 ```bash
 npx fsd shared ui
 ```
 
-Now create `shared/ui/Header.tsx`  with the following contents:
+Şimdi aşağıdaki içerikle `shared/ui/Header.tsx` dosyasını oluşturun:
 
 ```tsx title="shared/ui/Header.tsx"
 import { useContext } from "react";
@@ -1121,13 +1121,13 @@ export function Header() {
 }
 ```
 
-Export this component from `shared/ui`:
+Bu bileşeni `shared/ui` içinden dışa aktarın (export):
 
 ```tsx title="shared/ui/index.ts"
 export { Header } from "./Header";
 ```
 
-In the header, we rely on the context that’s kept in `shared/api`. Create that as well:
+Başlıkta, `shared/api` içinde tutulan bir bağlama (context) dayanıyoruz. Onu da oluşturun:
 
 ```tsx title="shared/api/currentUser.ts"
 import { createContext } from "react";
@@ -1146,7 +1146,7 @@ export { createUserSession, getUserFromSession, requireUser } from "./auth.serve
 export { CurrentUser } from "./currentUser";
 ```
 
-Now let’s add the header to the page. We want it to be on every single page, so it makes sense to simply add it to the root route and wrap the outlet (the place where the page will be rendered) with the `CurrentUser` context provider. This way our entire app and also the header has access to the current user object. We will also add a loader to actually obtain the current user object from cookies. Drop the following into `app/root.tsx`:
+Şimdi başlığı (header) sayfaya ekleyelim. Her sayfada yer almasını istediğimiz için, onu basitçe kök rotaya (root route) eklemek ve outlet'i (sayfanın render edileceği yer) `CurrentUser` context sağlayıcısı (provider) ile sarmalamak mantıklıdır. Bu şekilde hem tüm uygulamamız hem de başlığımız mevcut kullanıcı nesnesine erişebilir. Ayrıca mevcut kullanıcı nesnesini gerçekten çerezlerden (cookies) elde etmek için bir yükleyici (loader) ekleyeceğiz. Aşağıdakileri `app/root.tsx` dosyasına ekleyin:
 
 ```tsx title="app/root.tsx"
 import { cssBundleHref } from "@remix-run/css-bundle";
@@ -1212,17 +1212,17 @@ export default function App() {
 }
 ```
 
-At this point, you should end up with the following on the home page:
+Bu noktada, ana sayfada (home page) aşağıdaki gibi bir sonuç elde etmelisiniz:
 
 <figure>
-  ![The feed page of Conduit, including the header, the feed, and the tags. The tabs are still missing.](../../../../../../static/img/tutorial/realworld-feed-without-tabs.jpg)
+  ![Başlık (header), akış (feed) ve etiketler (tags) dahil Conduit'in akış sayfası. Sekmeler (tabs) hala eksik.](../../../../../../static/img/tutorial/realworld-feed-without-tabs.jpg)
 
-  <figcaption>The feed page of Conduit, including the header, the feed, and the tags. The tabs are still missing.</figcaption>
+  <figcaption>Başlık (header), akış (feed) ve etiketler (tags) dahil Conduit'in akış sayfası. Sekmeler (tabs) hala eksik.</figcaption>
 </figure>
 
-### Tabs
+### Sekmeler (Tabs)
 
-Now that we can detect the authentication state, let’s also quickly implement the tabs and post likes to be done with the feed page. We need another form, but this page file is getting kind of large, so let’s move these forms into adjacent files. We will create `Tabs.tsx`, `PopularTags.tsx`, and `Pagination.tsx` with the following content:
+Artık kimlik doğrulama (authentication) durumunu algılayabildiğimize göre, akış (feed) sayfasıyla işimizi bitirmek adına sekmeleri (tabs) ve gönderi beğenilerini (post likes) hızlıca uygulayalım. Başka bir forma daha ihtiyacımız var, ancak bu sayfa dosyası fazla büyümeye başlıyor; bu yüzden bu formları yan dosyalara (adjacent files) taşıyalım. Aşağıdaki içerikle `Tabs.tsx`, `PopularTags.tsx` ve `Pagination.tsx` dosyalarını oluşturacağız:
 
 ```tsx title="pages/feed/ui/Tabs.tsx"
 import { useContext } from "react";
@@ -1340,7 +1340,7 @@ export function Pagination() {
 }
 ```
 
-And now we can significantly simplify the feed page itself:
+Ve artık akış sayfasının (feed page) kendisini önemli ölçüde basitleştirebiliriz:
 
 ```tsx title="pages/feed/ui/FeedPage.tsx"
 import { useLoaderData } from "@remix-run/react";
@@ -1385,7 +1385,7 @@ export function FeedPage() {
 }
 ```
 
-We also need to account for the new tab in the loader function:
+Yükleyici (loader) fonksiyonumuzda bu yeni sekmeyi (tab) de hesaba katmamız gerekiyor:
 
 ```tsx title="pages/feed/api/loader.ts"
 import { json, type LoaderFunctionArgs } from "@remix-run/node";
@@ -1397,10 +1397,10 @@ import { GET, requireUser } from "shared/api";
 async function throwAnyErrors<T, O, Media extends `${string}/${string}`>(
   responsePromise: Promise<FetchResponse<T, O, Media>>,
 ) {
-  /* unchanged */
+  /* değişmedi */
 }
 
-/** Amount of articles on one page. */
+/** Bir sayfadaki makale sayısı. */
 export const LIMIT = 20;
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
@@ -1448,7 +1448,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 };
 ```
 
-Before we leave the feed page, let’s add some code that handles likes to posts. Change your `ArticlePreview.tsx` to the following:
+Akış sayfasından ayrılmadan önce, gönderilere (posts) yapılan beğenileri (likes) işleyen bir kod ekleyelim. `ArticlePreview.tsx` dosyanızı şu şekilde değiştirin:
 
 ```tsx title="pages/feed/ui/ArticlePreview.tsx"
 import { Form, Link } from "@remix-run/react";
@@ -1514,13 +1514,13 @@ export function ArticlePreview({ article }: ArticlePreviewProps) {
 }
 ```
 
-This code will send a POST request to `/article/:slug`  with `_action=favorite` to mark the article as favorite. It won’t work yet, but as we start working on the article reader, we will implement this too.
+Bu kod, makaleyi favori olarak işaretlemek için `/article/:slug` adresine `_action=favorite` ile bir POST isteği gönderecektir. Henüz çalışmayacaktır, ancak makale okuyucu sayfası üzerinde çalışmaya başladığımızda bunu da uygulayacağız.
 
-And with that we are officially done with the feed! Yay!
+Bununla birlikte, akış (feed) kısmıyla işimiz resmi olarak bitti! Yaşasın!
 
-### Article reader
+### Makale Okuma 
 
-First, we need data. Let’s create a loader:
+İlk olarak veriye ihtiyacımız var. Bir yükleyici (loader) oluşturalım:
 
 ```bash
 npx fsd pages article-read -s api
@@ -1580,13 +1580,13 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
 export { loader } from "./api/loader";
 ```
 
-Now we can connect it to the route `/article/:slug` by creating the a route file called `article.$slug.tsx`:
+Şimdi `article.$slug.tsx` adında bir rota dosyası oluşturarak onu `/article/:slug` rotasına bağlayabiliriz:
 
 ```tsx title="app/routes/article.$slug.tsx"
 export { loader } from "pages/article-read";
 ```
 
-The page itself consists of three main blocks — the article header with actions (repeated twice), the article body, and the comments section. This is the markup for the page, it’s not particularly interesting:
+Sayfanın kendisi üç ana bloktan oluşur — eylemleri (actions) içeren makale başlığı (iki kez tekrarlanır), makale gövdesi (body) ve yorumlar (comments) bölümü. Bu sayfa için yapıyı (markup) gösterir, özellikle ilginç bir yanı yoktur:
 
 ```tsx title="pages/article-read/ui/ArticleReadPage.tsx"
 import { useLoaderData } from "@remix-run/react";
@@ -1637,7 +1637,7 @@ export function ArticleReadPage() {
 }
 ```
 
-What’s more interesting is the `ArticleMeta` and `Comments`. They contain write operations such as liking an article, leaving a comment, etc. To get them to work, we first need to implement the backend part. Create `action.ts` in the `api` segment of the page:
+Daha ilginç olanı `ArticleMeta` ve `Comments` bileşenleridir. Bir makaleyi beğenmek, yorum bırakmak gibi yazma (write) işlemleri içerirler. Bunların çalışması için öncelikle arka uç (backend) kısmını uygulamamız gerekir. Sayfanın `api` segmentinde `action.ts` oluşturun:
 
 ```tsx title="pages/article-read/api/action.ts"
 import { redirect, type ActionFunctionArgs } from "@remix-run/node";
@@ -1733,7 +1733,7 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
 };
 ```
 
-Export that from the slice and then from the route. While we’re at it, let’s also connect the page itself:
+Bunu dilimden (slice) ve ardından rotadan (route) dışa aktarın. Hazır el atmışken, sayfanın kendisini de bağlayalım:
 
 ```tsx title="pages/article-read/index.ts"
 export { ArticleReadPage } from "./ui/ArticleReadPage";
@@ -1749,9 +1749,9 @@ export { loader, action } from "pages/article-read";
 export default ArticleReadPage;
 ```
 
-Now, even though we haven’t implemented the like button on the reader page yet, the like button in the feed will start working! That’s because it’s been sending “like” requests to this route. Give that a try.
+Şimdi, okuyucu (reader) sayfasındaki beğenme butonunu henüz uygulamamış olsak da akış (feed) içindeki beğenme butonu çalışmaya başlayacaktır! Bunun nedeni, bu rotaya "beğenme" istekleri gönderiyor olmasıdır. Bunu bir deneyin.
 
-`ArticleMeta` and `Comments` are, again, a bunch of forms. We’ve done this before, let’s grab their code and move on:
+`ArticleMeta` ve `Comments` yine bir grup formdan ibarettir. Bunu daha önce yapmıştık, hadi kodlarını alıp devam edelim:
 
 ```tsx title="pages/article-read/ui/ArticleMeta.tsx"
 import { Form, Link, useLoaderData } from "@remix-run/react";
@@ -1956,19 +1956,19 @@ export function Comments() {
 }
 ```
 
-And with that our article reader is also complete! The buttons to follow the author, like a post, and leave a comment should now function as expected.
+Bununla birlikte makale okuyucumuz (article reader) da tamamlandı! Yazarı takip etme (follow), bir gönderiyi beğenme (like) ve yorum bırakma butonları artık beklendiği gibi çalışmalıdır.
 
 <figure>
-  ![Article reader with functioning buttons to like and follow](../../../../../../static/img/tutorial/realworld-article-reader.jpg)
+  ![Beğenme ve takip etme butonları çalışan makale okuyucu](../../../../../../static/img/tutorial/realworld-article-reader.jpg)
 
-  <figcaption>Article reader with functioning buttons to like and follow</figcaption>
+  <figcaption>Beğenme ve takip etme butonları çalışan makale okuyucu</figcaption>
 </figure>
 
-### Article editor
+### Makale Düzenleyici (Article editor)
 
-This is the last page that we will cover in this tutorial, and the most interesting part here is how we’re going to validate form data.
+Bu eğitimde (tutorial) ele alacağımız son sayfa bu ve buradaki en ilginç kısım form verilerini nasıl doğrulayacağımızdır (validate).
 
-The page itself, `article-edit/ui/ArticleEditPage.tsx`, will be quite simple, extra complexity stowed away into two other components:
+Sayfanın kendisi olan `article-edit/ui/ArticleEditPage.tsx` oldukça basit olacak, ekstra karmaşıklık ise diğer iki bileşene (component) gizlenecek:
 
 ```tsx title="pages/article-edit/ui/ArticleEditPage.tsx"
 import { Form, useLoaderData } from "@remix-run/react";
@@ -2036,7 +2036,7 @@ export function ArticleEditPage() {
 }
 ```
 
-This page gets the current article (unless we’re writing from scratch) and fills in the corresponding form fields. We’ve seen this before. The interesting part is `FormErrors`, because it will receive the validation result and display it to the user. Let’s take a look:
+Bu sayfa, mevcut makaleyi alır (eğer sıfırdan yazmıyorsak) ve ilgili form alanlarını doldurur. Bunu daha önce görmüştük. İlginç olan kısım `FormErrors` bileşenidir, çünkü doğrulama sonucunu alacak ve kullanıcıya gösterecektir. Bir göz atalım:
 
 ```tsx title="pages/article-edit/ui/FormErrors.tsx"
 import { useActionData } from "@remix-run/react";
@@ -2055,9 +2055,9 @@ export function FormErrors() {
 }
 ```
 
-Here we are assuming that our action will return the `errors` field, an array of human-readable error messages. We will get to the action shortly.
+Burada, action (eylem) fonksiyonumuzun insan tarafından okunabilir hata mesajlarından oluşan bir dizi olan `errors` alanını döndüreceğini varsayıyoruz. Eyleme (action) birazdan geleceğiz.
 
-Another component is the tags input. It’s just a plain input field with an additional preview of chosen tags. Not much to see here:
+Bir diğer bileşen (component) ise etiket girişidir (tags input). Sadece seçilen etiketlerin eklendiği ve önizlemesinin gösterildiği düz bir giriş alanıdır (input field). Burada görülecek pek bir şey yok:
 
 ```tsx title="pages/article-edit/ui/TagsInput.tsx"
 import { useEffect, useRef, useState } from "react";
@@ -2115,7 +2115,7 @@ export function TagsInput({
 }
 ```
 
-Now, for the API part. The loader should look at the URL, and if it contains an article slug, that means we’re editing an existing article, and its data should be loaded. Otherwise, return nothing. Let’s create that loader:
+Şimdi, API kısmı için. Yükleyici (loader) URL'e bakmalı ve eğer bir makale kısa adı (slug) içeriyorsa, bu mevcut bir makaleyi düzenlediğimiz anlamına gelir; bu durumda onun verileri yüklenmelidir. Aksi takdirde, hiçbir şey döndürülmemelidir. Bu yükleyiciyi oluşturalım:
 
 ```ts title="pages/article-edit/api/loader.ts"
 import { json, type LoaderFunctionArgs } from "@remix-run/node";
@@ -2151,7 +2151,7 @@ export const loader = async ({ params, request }: LoaderFunctionArgs) => {
 };
 ```
 
-The action will take the new field values, run them through our data schema, and if everything is correct, commit those changes to the backend, either by updating an existing article or creating a new one:
+Eylem (action) yeni alan (field) değerlerini alacak, onları veri şemamızdan (data schema) geçirecek ve her şey doğruysa, mevcut bir makaleyi güncelleyerek (update) veya yeni bir tane oluşturarak bu değişiklikleri arka uca (backend) işleyecektir:
 
 ```tsx title="pages/article-edit/api/action.ts"
 import { json, redirect, type ActionFunctionArgs } from "@remix-run/node";
@@ -2197,7 +2197,7 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
 };
 ```
 
-The schema doubles as a parsing function for `FormData`, which allows us to conveniently get the clean fields or just throw the errors to handle at the end. Here’s how that parsing function could look:
+Bu şema (schema), aynı zamanda `FormData` için bir ayrıştırma (parsing) işlevi görür; bu da temiz alanları (clean fields) rahatça almamızı ya da sonda ele alınmak üzere hataları (errors) fırlatmamızı sağlar. İşte bu ayrıştırma fonksiyonu şöyle görünebilir:
 
 ```tsx title="pages/article-edit/model/parseAsArticle.ts"
 export function parseAsArticle(data: FormData) {
@@ -2236,9 +2236,9 @@ export function parseAsArticle(data: FormData) {
 }
 ```
 
-Arguably, it’s a bit lengthy and repetitive, but that’s the price we pay for human-readable errors. This could also be a Zod schema, for example, but then we would have to render error messages on the frontend, and this form is not worth the complication.
+Bunun biraz uzun ve tekrarlayan bir yapıda olduğu tartışılabilir, ancak insan tarafından okunabilir hatalar (human-readable errors) için ödediğimiz bedel budur. Bu, örneğin bir Zod şeması (schema) da olabilirdi, ancak o zaman ön uçta (frontend) hata mesajlarını derlememiz (render) gerekirdi ve bu form bu karmaşıklığa değmez.
 
-One last step — connect the page, the loader, and the action to the routes. Since we neatly support both creation and editing, we can export the same thing from both `editor._index.tsx` and `editor.$slug.tsx`:
+Son bir adım — sayfayı, yükleyiciyi (loader) ve eylemi (action) rotalara (routes) bağlayın. Hem oluşturmayı (creation) hem de düzenlemeyi (editing) düzgün bir şekilde desteklediğimiz için, hem `editor._index.tsx` hem de `editor.$slug.tsx` dosyalarından aynı şeyi dışa aktarabiliriz (export):
 
 ```tsx title="pages/article-edit/index.ts"
 export { ArticleEditPage } from "./ui/ArticleEditPage";
@@ -2246,7 +2246,7 @@ export { loader } from "./api/loader";
 export { action } from "./api/action";
 ```
 
-```tsx title="app/routes/editor._index.tsx, app/routes/editor.$slug.tsx (same content)"
+```tsx title="app/routes/editor._index.tsx, app/routes/editor.$slug.tsx (aynı içerik)"
 import { ArticleEditPage } from "pages/article-edit";
 
 export { loader, action } from "pages/article-edit";
@@ -2254,12 +2254,12 @@ export { loader, action } from "pages/article-edit";
 export default ArticleEditPage;
 ```
 
-We’re done now! Log in and try creating a new article. Or “forget” to write the article and see the validation kick in.
+Artık bitti! Giriş (login) yapın ve yeni bir makale oluşturmayı deneyin. Ya da makaleyi yazmayı "unutun" ve doğrulamanın (validation) devreye girdiğini görün.
 
 <figure>
-  ![The Conduit article editor, with the title field saying “New article” and the rest of the fields empty. Above the form there are two errors: “**Describe what this article is about” and “Write the article itself”.**](../../../../../../static/img/tutorial/realworld-article-editor.jpg)
+  ![Conduit makale düzenleyici (article editor), başlık alanında "New article" yazıyor ve geri kalan alanlar boş. Formun üzerinde iki hata var: "**Describe what this article is about**" ve "**Write the article itself**".](../../../../../../static/img/tutorial/realworld-article-editor.jpg)
 
-  <figcaption>The Conduit article editor, with the title field saying “New article” and the rest of the fields empty. Above the form there are two errors: **“Describe what this article is about”** and **“Write the article itself”**.</figcaption>
+  <figcaption>Conduit makale düzenleyici (article editor), başlık alanında "New article" yazıyor ve geri kalan alanlar boş. Formun üzerinde iki hata var: "**Describe what this article is about**" ve "**Write the article itself**".</figcaption>
 </figure>
 
-The profile and settings pages are very similar to the article reader and editor, they are left as an exercise for the reader, that’s you :)
+Profil (profile) ve ayarlar (settings) sayfaları makale okuyucu ve düzenleyiciye çok benzerdir; bunlar okuyucuya, yani size, bir pratik olarak bırakılmıştır :)
